@@ -2,7 +2,7 @@
 
 **Long-term, local-first, encrypted memory for [CrewAI](https://crewai.com) agents — as explicit, agent-callable tools.**
 
-`crewai-mimir` wraps [Mimir](https://github.com/Perseus-Computing-LLC/mimir) (an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
+`crewai-mimir` wraps [Mneme](https://github.com/Perseus-Computing-LLC/mneme) (formerly "Mimir" — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
 
 - **`mimir_remember`** — persist a fact, decision, insight, or note that survives across runs.
 - **`mimir_recall`** — search what was stored earlier.
@@ -15,7 +15,7 @@ CrewAI ships *implicit* memory (auto-captured short/long-term memory) and a gene
 
 The tools talk to a local `mimir` process over JSON-RPC (MCP stdio). You need the `mimir` binary on your `PATH` (or pass an absolute path).
 
-Install it from the [Mimir repository](https://github.com/Perseus-Computing-LLC/mimir) (build from source, or grab a release). Verify:
+Install it from the [Mneme repository](https://github.com/Perseus-Computing-LLC/mneme) (build from source, or grab a release). Verify:
 
 ```bash
 mimir --version
@@ -119,4 +119,4 @@ Unit tests mock the `mimir` subprocess, so they run with no binary installed.
 
 ## License
 
-MIT © 2026 Perseus Computing LLC. Mimir is MIT-licensed by Perseus Computing LLC.
+MIT © 2026 Perseus Computing LLC. Mneme (formerly Mimir) is MIT-licensed by Perseus Computing LLC.
