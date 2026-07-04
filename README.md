@@ -1,5 +1,7 @@
 # crewai-perseus-vault
 
+> **📦 Package renamed.** Previously published on PyPI as [`crewai-mimir`](https://pypi.org/project/crewai-mimir/) (now archived). This project is now [`crewai-perseus-vault`](https://pypi.org/project/crewai-perseus-vault/) — install with `pip install crewai-perseus-vault`.
+
 **Long-term, local-first, encrypted memory for [CrewAI](https://crewai.com) agents — as explicit, agent-callable tools.**
 
 `crewai-perseus-vault` wraps [Perseus Vault](https://github.com/Perseus-Computing-LLC/perseus-vault) (formerly "Mimir"/"Mneme" — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
