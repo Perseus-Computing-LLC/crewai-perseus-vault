@@ -13,7 +13,11 @@ import shutil
 
 import pytest
 
-from crewai_mimir import MimirClient, MimirRecallTool, MimirRememberTool
+from crewai_perseus_vault import (
+    PerseusVaultClient,
+    PerseusVaultRecallTool,
+    PerseusVaultRememberTool,
+)
 
 
 def _find_mimir() -> str | None:
@@ -47,13 +51,13 @@ pytestmark = pytest.mark.skipif(
 
 def test_real_remember_recall(tmp_path):
     db = tmp_path / "mimir.db"
-    client = MimirClient(db_path=str(db), mimir_binary=_MIMIR)
+    client = PerseusVaultClient(db_path=str(db), mimir_binary=_MIMIR)
     try:
-        remember = MimirRememberTool(client=client)
-        recall = MimirRecallTool(client=client)
+        remember = PerseusVaultRememberTool(client=client)
+        recall = PerseusVaultRecallTool(client=client)
 
         remember._run(
-            content="The capital of crewai-mimir testing is verification.",
+            content="The capital of crewai-perseus-vault testing is verification.",
             key="smoke-fact",
             category="insight",
             tags=["smoke"],

@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/crewai-mimir
+      url: https://pypi.org/p/crewai-perseus-vault
     permissions:
       id-token: write
     steps:

@@ -1,9 +1,10 @@
-"""Minimal Mimir MCP stdio client.
+"""Minimal Perseus Vault MCP stdio client.
 
-Mimir (github.com/Perseus-Computing-LLC/mimir) is an open-source (MIT)
-local-first, encrypted, persistent memory engine exposing 40+ tools over the
-Model Context Protocol.  This module talks to the ``mimir`` binary via JSON-RPC
-2.0 over stdin/stdout (the MCP stdio transport).
+Perseus Vault (github.com/Perseus-Computing-LLC/perseus-vault, formerly
+"Mimir"/"Mneme") is an open-source (MIT) local-first, encrypted, persistent
+memory engine exposing 40+ tools over the Model Context Protocol.  This module
+talks to the ``mimir`` binary via JSON-RPC 2.0 over stdin/stdout (the MCP stdio
+transport).
 
 The client core (spawn subprocess, background stdout reader, id-correlated RPC
 with timeout, MCP initialize handshake) is adapted from the proven
@@ -11,7 +12,8 @@ with timeout, MCP initialize handshake) is adapted from the proven
 
 Requirements:
     A ``mimir`` binary must be on ``$PATH`` or passed explicitly.  Build from
-    source or install from https://github.com/Perseus-Computing-LLC/mimir.
+    source or install from
+    https://github.com/Perseus-Computing-LLC/perseus-vault.
 """
 
 from __future__ import annotations
@@ -25,18 +27,18 @@ import subprocess
 import threading
 import time
 
-__all__ = ["MimirClient"]
+__all__ = ["PerseusVaultClient"]
 
 
-class MimirClient:
+class PerseusVaultClient:
     """Thread-safe JSON-RPC client for a ``mimir serve`` stdio subprocess.
 
     The client spawns ``mimir serve --db <db_path>`` and performs the MCP
     initialize handshake on construction.  Call :meth:`call_tool` to invoke any
-    Mimir MCP tool by name.
+    Perseus Vault MCP tool by name.
 
     Attributes:
-        db_path: Filesystem path to the Mimir SQLite database.
+        db_path: Filesystem path to the Perseus Vault SQLite database.
     """
 
     def __init__(
@@ -46,10 +48,10 @@ class MimirClient:
         timeout_s: float = 30.0,
         encryption_key: str | None = None,
     ) -> None:
-        """Initializes and starts the Mimir client.
+        """Initializes and starts the Perseus Vault client.
 
         Args:
-            db_path: Path to the Mimir SQLite database.  Created if absent.
+            db_path: Path to the Perseus Vault SQLite database.  Created if absent.
             mimir_binary: Name or absolute path of the ``mimir`` executable.
             timeout_s: Per-RPC response timeout, guarding against a hung server.
             encryption_key: Optional path to an AES-256-GCM key file; enables
@@ -68,7 +70,8 @@ class MimirClient:
             if resolved is None:
                 raise RuntimeError(
                     f"mimir binary not found on $PATH (looked for '{mimir_binary}'). "
-                    "Install Mimir from https://github.com/Perseus-Computing-LLC/mimir "
+                    "Install Perseus Vault from "
+                    "https://github.com/Perseus-Computing-LLC/perseus-vault "
                     "or pass the absolute path via mimir_binary=."
                 )
             self._mimir_binary = resolved
@@ -115,7 +118,7 @@ class MimirClient:
             {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {},
-                "clientInfo": {"name": "crewai-mimir", "version": "0.1.0"},
+                "clientInfo": {"name": "crewai-perseus-vault", "version": "0.1.0"},
             },
         )
         self._notify("notifications/initialized", {})
@@ -125,7 +128,7 @@ class MimirClient:
     # -- lifecycle ----------------------------------------------------------
 
     def close(self) -> None:
-        """Terminates the Mimir subprocess (idempotent)."""
+        """Terminates the Perseus Vault subprocess (idempotent)."""
         proc = getattr(self, "_proc", None)
         if proc is None:
             return
@@ -138,7 +141,7 @@ class MimirClient:
             except Exception:
                 pass
 
-    def __enter__(self) -> "MimirClient":
+    def __enter__(self) -> "PerseusVaultClient":
         return self
 
     def __exit__(self, *exc) -> None:
@@ -174,7 +177,7 @@ class MimirClient:
                 self._proc.stdin.flush()
             except (BrokenPipeError, OSError) as e:
                 raise RuntimeError(
-                    f"Mimir subprocess communication failed: {e}. "
+                    f"Perseus Vault subprocess communication failed: {e}. "
                     "The mimir process may have crashed."
                 ) from e
 
@@ -183,17 +186,17 @@ class MimirClient:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise RuntimeError(
-                        f"Mimir RPC '{method}' timed out after {self._timeout_s}s."
+                        f"Perseus Vault RPC '{method}' timed out after {self._timeout_s}s."
                     )
                 try:
                     raw = self._recv.get(timeout=remaining)
                 except queue.Empty:
                     raise RuntimeError(
-                        f"Mimir RPC '{method}' timed out after {self._timeout_s}s."
+                        f"Perseus Vault RPC '{method}' timed out after {self._timeout_s}s."
                     )
                 if raw is None:
                     raise RuntimeError(
-                        "Mimir subprocess closed its output (it may have crashed)."
+                        "Perseus Vault subprocess closed its output (it may have crashed)."
                     )
                 raw = raw.strip()
                 if not raw:
@@ -207,7 +210,7 @@ class MimirClient:
                 if "error" in resp:
                     err = resp["error"]
                     raise RuntimeError(
-                        f"Mimir RPC error [{err.get('code')}]: {err.get('message')}"
+                        f"Perseus Vault RPC error [{err.get('code')}]: {err.get('message')}"
                     )
                 return resp.get("result", {})
 
@@ -224,10 +227,10 @@ class MimirClient:
     # -- public API ---------------------------------------------------------
 
     def call_tool(self, name: str, arguments: dict) -> dict:
-        """Calls a Mimir MCP tool and returns its structured result.
+        """Calls a Perseus Vault MCP tool and returns its structured result.
 
         Args:
-            name: The Mimir tool name, e.g. ``mimir_remember`` or
+            name: The Perseus Vault tool name, e.g. ``mimir_remember`` or
                 ``mimir_recall``.
             arguments: The tool arguments.
 

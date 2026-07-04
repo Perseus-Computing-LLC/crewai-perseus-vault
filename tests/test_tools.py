@@ -1,4 +1,4 @@
-"""Tests for crewai-mimir tools against a fake Mimir MCP stdio server.
+"""Tests for crewai-perseus-vault tools against a fake Perseus Vault MCP stdio server.
 
 No real ``mimir`` binary is required: ``subprocess.Popen`` is monkeypatched to
 return an in-process fake that speaks JSON-RPC 2.0 over fake stdin/stdout pipes,
@@ -13,18 +13,18 @@ import queue
 import pytest
 from pydantic import ValidationError
 
-import crewai_mimir._client as client_mod
-from crewai_mimir import (
-    MimirClient,
-    MimirRecallInput,
-    MimirRecallTool,
-    MimirRememberInput,
-    MimirRememberTool,
-    build_mimir_tools,
+import crewai_perseus_vault._client as client_mod
+from crewai_perseus_vault import (
+    PerseusVaultClient,
+    PerseusVaultRecallInput,
+    PerseusVaultRecallTool,
+    PerseusVaultRememberInput,
+    PerseusVaultRememberTool,
+    build_perseus_vault_tools,
 )
 
 
-# ── Fake Mimir MCP stdio server ──────────────────────────────────────────────
+# ── Fake Perseus Vault MCP stdio server ──────────────────────────────────────
 
 
 class _FakeStdin:
@@ -65,8 +65,8 @@ class _FakeStdout:
         self._q.put(None)
 
 
-class FakeMimir:
-    """Minimal Popen-compatible fake of the Mimir MCP stdio server."""
+class FakePerseusVault:
+    """Minimal Popen-compatible fake of the Perseus Vault MCP stdio server."""
 
     def __init__(self, cmd=None, **kwargs):
         self.cmd = cmd
@@ -75,7 +75,7 @@ class FakeMimir:
         self.stdin = _FakeStdin(self._handle)
         self._alive = True
 
-    # -- Popen surface used by MimirClient --
+    # -- Popen surface used by PerseusVaultClient --
     def terminate(self):
         self._alive = False
         self.stdout.close()
@@ -132,11 +132,11 @@ class FakeMimir:
 
 @pytest.fixture
 def fake_popen(monkeypatch):
-    """Patch subprocess.Popen + shutil.which so MimirClient uses FakeMimir."""
+    """Patch subprocess.Popen + shutil.which so PerseusVaultClient uses FakePerseusVault."""
     created = {}
 
     def _fake_popen(cmd, **kwargs):
-        fm = FakeMimir(cmd=cmd, **kwargs)
+        fm = FakePerseusVault(cmd=cmd, **kwargs)
         created["proc"] = fm
         return fm
 
@@ -150,46 +150,46 @@ def fake_popen(monkeypatch):
 
 def test_remember_input_requires_content_and_key():
     with pytest.raises(ValidationError):
-        MimirRememberInput(key="k")  # missing content
+        PerseusVaultRememberInput(key="k")  # missing content
     with pytest.raises(ValidationError):
-        MimirRememberInput(content="c")  # missing key
-    ok = MimirRememberInput(content="c", key="k")
+        PerseusVaultRememberInput(content="c")  # missing key
+    ok = PerseusVaultRememberInput(content="c", key="k")
     assert ok.category == "insight"
     assert ok.importance == 0.5
 
 
 def test_remember_input_importance_bounds():
     with pytest.raises(ValidationError):
-        MimirRememberInput(content="c", key="k", importance=1.5)
+        PerseusVaultRememberInput(content="c", key="k", importance=1.5)
     with pytest.raises(ValidationError):
-        MimirRememberInput(content="c", key="k", importance=-0.1)
+        PerseusVaultRememberInput(content="c", key="k", importance=-0.1)
 
 
 def test_recall_input_requires_query_and_limit_bounds():
     with pytest.raises(ValidationError):
-        MimirRecallInput()  # missing query
+        PerseusVaultRecallInput()  # missing query
     with pytest.raises(ValidationError):
-        MimirRecallInput(query="q", limit=0)  # below ge=1
-    ok = MimirRecallInput(query="q")
+        PerseusVaultRecallInput(query="q", limit=0)  # below ge=1
+    ok = PerseusVaultRecallInput(query="q")
     assert ok.limit == 5
 
 
 def test_tool_metadata():
-    t = MimirRememberTool.model_construct()
+    t = PerseusVaultRememberTool.model_construct()
     assert t.name == "mimir_remember"
-    assert t.args_schema is MimirRememberInput
-    r = MimirRecallTool.model_construct()
+    assert t.args_schema is PerseusVaultRememberInput
+    r = PerseusVaultRecallTool.model_construct()
     assert r.name == "mimir_recall"
-    assert r.args_schema is MimirRecallInput
+    assert r.args_schema is PerseusVaultRecallInput
 
 
 # ── _run round-trips against the fake server ──────────────────────────────────
 
 
 def test_remember_then_recall(fake_popen):
-    client = MimirClient(db_path="./_t/mimir.db")
-    remember = MimirRememberTool(client=client)
-    recall = MimirRecallTool(client=client)
+    client = PerseusVaultClient(db_path="./_t/mimir.db")
+    remember = PerseusVaultRememberTool(client=client)
+    recall = PerseusVaultRecallTool(client=client)
 
     out = remember._run(
         content="Use PostgreSQL 16 for the main datastore.",
@@ -210,9 +210,9 @@ def test_remember_then_recall(fake_popen):
 
 
 def test_recall_category_filter(fake_popen):
-    client = MimirClient(db_path="./_t/mimir.db")
-    remember = MimirRememberTool(client=client)
-    recall = MimirRecallTool(client=client)
+    client = PerseusVaultClient(db_path="./_t/mimir.db")
+    remember = PerseusVaultRememberTool(client=client)
+    recall = PerseusVaultRecallTool(client=client)
 
     remember._run(content="alpha fact", key="a", category="insight")
     remember._run(content="alpha decision", key="b", category="decision")
@@ -229,19 +229,19 @@ def test_run_through_crewai_tool_run_wrapper(fake_popen):
     Note: in crewai 1.15.x, run() forwards keyword arguments to _run; passing a
     single positional dict is NOT unpacked, so agents/tooling call with kwargs.
     """
-    client = MimirClient(db_path="./_t/mimir.db")
-    remember = MimirRememberTool(client=client)
+    client = PerseusVaultClient(db_path="./_t/mimir.db")
+    remember = PerseusVaultRememberTool(client=client)
     result = remember.run(
         content="wrapped via run()", key="w1", category="insight"
     )
     assert json.loads(result)["status"] == "remembered"
-    out = json.loads(MimirRecallTool(client=client).run(query="wrapped"))
+    out = json.loads(PerseusVaultRecallTool(client=client).run(query="wrapped"))
     assert any("wrapped" in r["content"] for r in out["results"])
     client.close()
 
 
-def test_build_mimir_tools_shares_client(fake_popen):
-    tools = build_mimir_tools(db_path="./_t/mimir.db")
+def test_build_perseus_vault_tools_shares_client(fake_popen):
+    tools = build_perseus_vault_tools(db_path="./_t/mimir.db")
     assert len(tools) == 2
     names = {t.name for t in tools}
     assert names == {"mimir_remember", "mimir_recall"}
@@ -252,4 +252,4 @@ def test_build_mimir_tools_shares_client(fake_popen):
 def test_missing_binary_raises(monkeypatch):
     monkeypatch.setattr(client_mod.shutil, "which", lambda b: None)
     with pytest.raises(RuntimeError, match="mimir binary not found"):
-        MimirClient(db_path="./_t/mimir.db", mimir_binary="mimir")
+        PerseusVaultClient(db_path="./_t/mimir.db", mimir_binary="mimir")

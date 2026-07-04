@@ -1,15 +1,15 @@
-# crewai-mimir
+# crewai-perseus-vault
 
 **Long-term, local-first, encrypted memory for [CrewAI](https://crewai.com) agents — as explicit, agent-callable tools.**
 
-`crewai-mimir` wraps [Perseus Vault](https://github.com/Perseus-Computing-LLC/perseus-vault) (formerly "Mimir"/"Mneme" — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
+`crewai-perseus-vault` wraps [Perseus Vault](https://github.com/Perseus-Computing-LLC/perseus-vault) (formerly "Mimir"/"Mneme" — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
 
 - **`mimir_remember`** — persist a fact, decision, insight, or note that survives across runs.
 - **`mimir_recall`** — search what was stored earlier.
 
 ### Why tools (and not CrewAI's built-in memory)?
 
-CrewAI ships *implicit* memory (auto-captured short/long-term memory) and a generic MCP adapter. `crewai-mimir` is deliberately different: it exposes **explicit, controllable memory** the agent chooses to invoke, with a typed `args_schema` so the LLM sees exactly what each call needs. Use it when you want the agent to reason about *what* to remember and *when* to recall — backed by a durable, encryptable store you own on disk.
+CrewAI ships *implicit* memory (auto-captured short/long-term memory) and a generic MCP adapter. `crewai-perseus-vault` is deliberately different: it exposes **explicit, controllable memory** the agent chooses to invoke, with a typed `args_schema` so the LLM sees exactly what each call needs. Use it when you want the agent to reason about *what* to remember and *when* to recall — backed by a durable, encryptable store you own on disk.
 
 ## Prerequisite: the `mimir` binary
 
@@ -26,7 +26,7 @@ The tools spawn `mimir serve --db <db_path>` for you — you do **not** start it
 ## Install
 
 ```bash
-pip install crewai-mimir
+pip install crewai-perseus-vault
 ```
 
 (or, from source: `pip install -e ".[test]"`)
@@ -35,10 +35,10 @@ pip install crewai-mimir
 
 ```python
 from crewai import Agent, Crew, Task
-from crewai_mimir import build_mimir_tools
+from crewai_perseus_vault import build_perseus_vault_tools
 
 # One shared mimir process backs both tools.
-memory_tools = build_mimir_tools(db_path="~/.mimir/data/crew.db")
+memory_tools = build_perseus_vault_tools(db_path="~/.mimir/data/crew.db")
 
 researcher = Agent(
     role="Research Analyst",
@@ -68,11 +68,15 @@ print(result)
 ### Using the tool classes directly
 
 ```python
-from crewai_mimir import MimirRememberTool, MimirRecallTool, MimirClient
+from crewai_perseus_vault import (
+    PerseusVaultRememberTool,
+    PerseusVaultRecallTool,
+    PerseusVaultClient,
+)
 
-client = MimirClient(db_path="~/.mimir/data/crew.db")          # one shared process
-remember = MimirRememberTool(client=client)
-recall = MimirRecallTool(client=client)
+client = PerseusVaultClient(db_path="~/.mimir/data/crew.db")   # one shared process
+remember = PerseusVaultRememberTool(client=client)
+recall = PerseusVaultRecallTool(client=client)
 
 agent = Agent(..., tools=[remember, recall])
 ```
@@ -83,7 +87,7 @@ If you omit `client`, each tool lazily starts its own `mimir serve` on first use
 ### Encryption at rest
 
 ```python
-tools = build_mimir_tools(
+tools = build_perseus_vault_tools(
     db_path="~/.mimir/data/crew.db",
     encryption_key="~/.mimir/key.b64",   # base64-encoded 32-byte AES-256-GCM key
 )
@@ -100,7 +104,7 @@ Both return a JSON string. `mimir_recall` returns `{"query": ..., "results": [..
 
 ## How it works
 
-`MimirClient` spawns `mimir serve --db <path>`, performs the MCP `initialize`
+`PerseusVaultClient` spawns `mimir serve --db <path>`, performs the MCP `initialize`
 handshake, and issues id-correlated JSON-RPC requests with a per-call timeout
 over stdin/stdout. The client core is adapted from the proven
 [`adk-mimir-memory`](https://github.com/Perseus-Computing-LLC/adk-mimir-memory)

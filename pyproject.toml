@@ -3,16 +3,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "crewai-mimir"
+name = "crewai-perseus-vault"
 version = "0.1.0"
 authors = [
     { name = "Perseus Computing LLC", email = "hermes@perseus.observer" },
 ]
-description = "Mimir long-term memory as CrewAI tools — local-first, encrypted, persistent memory the agent can explicitly call."
+description = "Perseus Vault long-term memory as CrewAI tools — local-first, encrypted, persistent memory the agent can explicitly call."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-keywords = ["crewai", "mimir", "memory", "agents", "mcp", "tools", "llm"]
+keywords = ["crewai", "perseus-vault", "memory", "agents", "mcp", "tools", "llm"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -36,7 +36,7 @@ test = ["pytest>=7.0"]
 Homepage = "https://github.com/Perseus-Computing-LLC/crewai-mimir"
 Repository = "https://github.com/Perseus-Computing-LLC/crewai-mimir"
 "Bug Tracker" = "https://github.com/Perseus-Computing-LLC/crewai-mimir/issues"
-Mimir = "https://github.com/Perseus-Computing-LLC/mimir"
+"Perseus Vault" = "https://github.com/Perseus-Computing-LLC/perseus-vault"
 
 [tool.hatch.build.targets.wheel]
-packages = ["crewai_mimir"]
+packages = ["crewai_perseus_vault"]

@@ -1,17 +1,18 @@
-"""CrewAI tools that wrap the Mimir memory engine.
+"""CrewAI tools that wrap the Perseus Vault memory engine.
 
 These are explicit, agent-callable tools (subclasses of ``crewai.tools.BaseTool``)
 that let a CrewAI agent deliberately store and retrieve durable memories in
-Mimir.  Unlike CrewAI's built-in (implicit) memory or a generic MCP adapter,
-these surface ``remember`` and ``recall`` as first-class actions the agent
-chooses to invoke, with a typed ``args_schema`` so the LLM sees exactly what
-each call needs.
+Perseus Vault.  Unlike CrewAI's built-in (implicit) memory or a generic MCP
+adapter, these surface ``remember`` and ``recall`` as first-class actions the
+agent chooses to invoke, with a typed ``args_schema`` so the LLM sees exactly
+what each call needs.
 
 Tools:
-    MimirRememberTool — store a fact/decision/note in Mimir.
-    MimirRecallTool   — search Mimir for previously stored memories.
+    PerseusVaultRememberTool — store a fact/decision/note in Perseus Vault.
+    PerseusVaultRecallTool   — search Perseus Vault for stored memories.
 
-Both tools share a single :class:`~crewai_mimir._client.MimirClient` so one
+Both tools share a single
+:class:`~crewai_perseus_vault._client.PerseusVaultClient` so one
 ``mimir serve`` subprocess backs the whole crew.
 """
 
@@ -23,22 +24,22 @@ from typing import Optional, Type
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from ._client import MimirClient
+from ._client import PerseusVaultClient
 
 __all__ = [
-    "MimirRememberInput",
-    "MimirRecallInput",
-    "MimirRememberTool",
-    "MimirRecallTool",
-    "build_mimir_tools",
+    "PerseusVaultRememberInput",
+    "PerseusVaultRecallInput",
+    "PerseusVaultRememberTool",
+    "PerseusVaultRecallTool",
+    "build_perseus_vault_tools",
 ]
 
 
 # ── args schemas ────────────────────────────────────────────────────────────
 
 
-class MimirRememberInput(BaseModel):
-    """Input schema for :class:`MimirRememberTool`."""
+class PerseusVaultRememberInput(BaseModel):
+    """Input schema for :class:`PerseusVaultRememberTool`."""
 
     content: str = Field(
         ...,
@@ -67,8 +68,8 @@ class MimirRememberInput(BaseModel):
     )
 
 
-class MimirRecallInput(BaseModel):
-    """Input schema for :class:`MimirRecallTool`."""
+class PerseusVaultRecallInput(BaseModel):
+    """Input schema for :class:`PerseusVaultRecallTool`."""
 
     query: str = Field(
         ...,
@@ -89,32 +90,33 @@ class MimirRecallInput(BaseModel):
 # ── tools ───────────────────────────────────────────────────────────────────
 
 
-class MimirRememberTool(BaseTool):
-    """Store a durable memory in Mimir.
+class PerseusVaultRememberTool(BaseTool):
+    """Store a durable memory in Perseus Vault.
 
-    Pass a shared :class:`MimirClient` (recommended, so all tools reuse one
-    ``mimir serve`` process), or let the tool lazily start its own using
+    Pass a shared :class:`PerseusVaultClient` (recommended, so all tools reuse
+    one ``mimir serve`` process), or let the tool lazily start its own using
     ``db_path`` / ``mimir_binary``.
     """
 
     name: str = "mimir_remember"
     description: str = (
-        "Persist a fact, decision, insight, or note to long-term memory (Mimir) "
-        "so it survives across sessions. Provide the content and a short unique "
-        "key. Use this whenever you learn something worth remembering later."
+        "Persist a fact, decision, insight, or note to long-term memory "
+        "(Perseus Vault) so it survives across sessions. Provide the content "
+        "and a short unique key. Use this whenever you learn something worth "
+        "remembering later."
     )
-    args_schema: Type[BaseModel] = MimirRememberInput
+    args_schema: Type[BaseModel] = PerseusVaultRememberInput
 
     # Non-schema configuration (excluded from the LLM-facing args_schema).
-    client: Optional[MimirClient] = None
+    client: Optional[PerseusVaultClient] = None
     db_path: str = "~/.mimir/data/mimir.db"
     mimir_binary: str = "mimir"
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def _get_client(self) -> MimirClient:
+    def _get_client(self) -> PerseusVaultClient:
         if self.client is None:
-            self.client = MimirClient(
+            self.client = PerseusVaultClient(
                 db_path=self.db_path, mimir_binary=self.mimir_binary
             )
         return self.client
@@ -139,34 +141,39 @@ class MimirRememberTool(BaseTool):
             },
         )
         return json.dumps(
-            {"status": "remembered", "category": category, "key": key, "mimir": result}
+            {
+                "status": "remembered",
+                "category": category,
+                "key": key,
+                "perseus_vault": result,
+            }
         )
 
 
-class MimirRecallTool(BaseTool):
-    """Search Mimir for previously stored memories.
+class PerseusVaultRecallTool(BaseTool):
+    """Search Perseus Vault for previously stored memories.
 
-    Pass a shared :class:`MimirClient` (recommended), or let the tool lazily
-    start its own using ``db_path`` / ``mimir_binary``.
+    Pass a shared :class:`PerseusVaultClient` (recommended), or let the tool
+    lazily start its own using ``db_path`` / ``mimir_binary``.
     """
 
     name: str = "mimir_recall"
     description: str = (
-        "Search long-term memory (Mimir) for facts, decisions, or notes stored "
-        "earlier. Returns the best-matching memories. Use this before answering "
-        "to check what you already know."
+        "Search long-term memory (Perseus Vault) for facts, decisions, or notes "
+        "stored earlier. Returns the best-matching memories. Use this before "
+        "answering to check what you already know."
     )
-    args_schema: Type[BaseModel] = MimirRecallInput
+    args_schema: Type[BaseModel] = PerseusVaultRecallInput
 
-    client: Optional[MimirClient] = None
+    client: Optional[PerseusVaultClient] = None
     db_path: str = "~/.mimir/data/mimir.db"
     mimir_binary: str = "mimir"
 
     model_config = {"arbitrary_types_allowed": True}
 
-    def _get_client(self) -> MimirClient:
+    def _get_client(self) -> PerseusVaultClient:
         if self.client is None:
-            self.client = MimirClient(
+            self.client = PerseusVaultClient(
                 db_path=self.db_path, mimir_binary=self.mimir_binary
             )
         return self.client
@@ -186,25 +193,26 @@ class MimirRecallTool(BaseTool):
         return json.dumps({"query": query, "results": items})
 
 
-def build_mimir_tools(
+def build_perseus_vault_tools(
     db_path: str = "~/.mimir/data/mimir.db",
     mimir_binary: str = "mimir",
     encryption_key: Optional[str] = None,
 ) -> list[BaseTool]:
-    """Convenience: build remember+recall tools sharing one Mimir process.
+    """Convenience: build remember+recall tools sharing one Perseus Vault process.
 
     Args:
-        db_path: Path to the Mimir SQLite database.
+        db_path: Path to the Perseus Vault SQLite database.
         mimir_binary: Name or absolute path of the ``mimir`` executable.
         encryption_key: Optional path to an AES-256-GCM key file.
 
     Returns:
-        ``[MimirRememberTool, MimirRecallTool]`` backed by a single client.
+        ``[PerseusVaultRememberTool, PerseusVaultRecallTool]`` backed by a
+        single client.
     """
-    client = MimirClient(
+    client = PerseusVaultClient(
         db_path=db_path, mimir_binary=mimir_binary, encryption_key=encryption_key
     )
     return [
-        MimirRememberTool(client=client),
-        MimirRecallTool(client=client),
+        PerseusVaultRememberTool(client=client),
+        PerseusVaultRecallTool(client=client),
     ]
