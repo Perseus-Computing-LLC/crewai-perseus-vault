@@ -13,7 +13,7 @@ Tools:
 
 Both tools share a single
 :class:`~crewai_perseus_vault._client.PerseusVaultClient` so one
-``mimir serve`` subprocess backs the whole crew.
+``perseus-vault serve`` subprocess backs the whole crew.
 """
 
 from __future__ import annotations
@@ -94,11 +94,11 @@ class PerseusVaultRememberTool(BaseTool):
     """Store a durable memory in Perseus Vault.
 
     Pass a shared :class:`PerseusVaultClient` (recommended, so all tools reuse
-    one ``mimir serve`` process), or let the tool lazily start its own using
-    ``db_path`` / ``mimir_binary``.
+    one ``perseus-vault serve`` process), or let the tool lazily start its own
+    using ``db_path`` / ``perseus_vault_binary``.
     """
 
-    name: str = "mimir_remember"
+    name: str = "perseus_vault_remember"
     description: str = (
         "Persist a fact, decision, insight, or note to long-term memory "
         "(Perseus Vault) so it survives across sessions. Provide the content "
@@ -110,14 +110,15 @@ class PerseusVaultRememberTool(BaseTool):
     # Non-schema configuration (excluded from the LLM-facing args_schema).
     client: Optional[PerseusVaultClient] = None
     db_path: str = "~/.mimir/data/mimir.db"
-    mimir_binary: str = "mimir"
+    perseus_vault_binary: str = "perseus-vault"
 
     model_config = {"arbitrary_types_allowed": True}
 
     def _get_client(self) -> PerseusVaultClient:
         if self.client is None:
             self.client = PerseusVaultClient(
-                db_path=self.db_path, mimir_binary=self.mimir_binary
+                db_path=self.db_path,
+                perseus_vault_binary=self.perseus_vault_binary,
             )
         return self.client
 
@@ -131,7 +132,7 @@ class PerseusVaultRememberTool(BaseTool):
     ) -> str:
         client = self._get_client()
         result = client.call_tool(
-            "mimir_remember",
+            "perseus_vault_remember",
             {
                 "category": category,
                 "key": key,
@@ -154,10 +155,10 @@ class PerseusVaultRecallTool(BaseTool):
     """Search Perseus Vault for previously stored memories.
 
     Pass a shared :class:`PerseusVaultClient` (recommended), or let the tool
-    lazily start its own using ``db_path`` / ``mimir_binary``.
+    lazily start its own using ``db_path`` / ``perseus_vault_binary``.
     """
 
-    name: str = "mimir_recall"
+    name: str = "perseus_vault_recall"
     description: str = (
         "Search long-term memory (Perseus Vault) for facts, decisions, or notes "
         "stored earlier. Returns the best-matching memories. Use this before "
@@ -167,14 +168,15 @@ class PerseusVaultRecallTool(BaseTool):
 
     client: Optional[PerseusVaultClient] = None
     db_path: str = "~/.mimir/data/mimir.db"
-    mimir_binary: str = "mimir"
+    perseus_vault_binary: str = "perseus-vault"
 
     model_config = {"arbitrary_types_allowed": True}
 
     def _get_client(self) -> PerseusVaultClient:
         if self.client is None:
             self.client = PerseusVaultClient(
-                db_path=self.db_path, mimir_binary=self.mimir_binary
+                db_path=self.db_path,
+                perseus_vault_binary=self.perseus_vault_binary,
             )
         return self.client
 
@@ -188,21 +190,22 @@ class PerseusVaultRecallTool(BaseTool):
         arguments: dict = {"query": query, "limit": limit}
         if category:
             arguments["category"] = category
-        result = client.call_tool("mimir_recall", arguments)
+        result = client.call_tool("perseus_vault_recall", arguments)
         items = result.get("items", result) if isinstance(result, dict) else result
         return json.dumps({"query": query, "results": items})
 
 
 def build_perseus_vault_tools(
     db_path: str = "~/.mimir/data/mimir.db",
-    mimir_binary: str = "mimir",
+    perseus_vault_binary: str = "perseus-vault",
     encryption_key: Optional[str] = None,
 ) -> list[BaseTool]:
     """Convenience: build remember+recall tools sharing one Perseus Vault process.
 
     Args:
         db_path: Path to the Perseus Vault SQLite database.
-        mimir_binary: Name or absolute path of the ``mimir`` executable.
+        perseus_vault_binary: Name or absolute path of the ``perseus-vault``
+            executable.
         encryption_key: Optional path to an AES-256-GCM key file.
 
     Returns:
@@ -210,7 +213,9 @@ def build_perseus_vault_tools(
         single client.
     """
     client = PerseusVaultClient(
-        db_path=db_path, mimir_binary=mimir_binary, encryption_key=encryption_key
+        db_path=db_path,
+        perseus_vault_binary=perseus_vault_binary,
+        encryption_key=encryption_key,
     )
     return [
         PerseusVaultRememberTool(client=client),

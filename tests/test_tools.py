@@ -107,12 +107,12 @@ class FakePerseusVault:
             self._reply(req_id, {})
 
     def _call_tool(self, name, args):
-        if name == "mimir_remember":
+        if name == "perseus_vault_remember":
             key = (args.get("category"), args.get("key"))
             body = json.loads(args.get("body_json", "{}"))
             self.store[key] = {**args, "body": body}
             return {"structuredContent": {"stored": True, "key": args.get("key")}}
-        if name == "mimir_recall":
+        if name == "perseus_vault_recall":
             query = (args.get("query") or "").lower()
             cat = args.get("category")
             limit = args.get("limit", 10)
@@ -141,7 +141,7 @@ def fake_popen(monkeypatch):
         return fm
 
     monkeypatch.setattr(client_mod.subprocess, "Popen", _fake_popen)
-    monkeypatch.setattr(client_mod.shutil, "which", lambda b: "/fake/mimir")
+    monkeypatch.setattr(client_mod.shutil, "which", lambda b: "/fake/perseus-vault")
     return created
 
 
@@ -176,10 +176,10 @@ def test_recall_input_requires_query_and_limit_bounds():
 
 def test_tool_metadata():
     t = PerseusVaultRememberTool.model_construct()
-    assert t.name == "mimir_remember"
+    assert t.name == "perseus_vault_remember"
     assert t.args_schema is PerseusVaultRememberInput
     r = PerseusVaultRecallTool.model_construct()
-    assert r.name == "mimir_recall"
+    assert r.name == "perseus_vault_recall"
     assert r.args_schema is PerseusVaultRecallInput
 
 
@@ -244,12 +244,14 @@ def test_build_perseus_vault_tools_shares_client(fake_popen):
     tools = build_perseus_vault_tools(db_path="./_t/mimir.db")
     assert len(tools) == 2
     names = {t.name for t in tools}
-    assert names == {"mimir_remember", "mimir_recall"}
+    assert names == {"perseus_vault_remember", "perseus_vault_recall"}
     assert tools[0].client is tools[1].client
     tools[0].client.close()
 
 
 def test_missing_binary_raises(monkeypatch):
     monkeypatch.setattr(client_mod.shutil, "which", lambda b: None)
-    with pytest.raises(RuntimeError, match="mimir binary not found"):
-        PerseusVaultClient(db_path="./_t/mimir.db", mimir_binary="mimir")
+    with pytest.raises(RuntimeError, match="perseus-vault binary not found"):
+        PerseusVaultClient(
+            db_path="./_t/mimir.db", perseus_vault_binary="perseus-vault"
+        )
