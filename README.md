@@ -109,7 +109,7 @@ Both return a JSON string. `perseus_vault_recall` returns `{"query": ..., "resul
 `PerseusVaultClient` spawns `perseus-vault serve --db <path>`, performs the MCP `initialize`
 handshake, and issues id-correlated JSON-RPC requests with a per-call timeout
 over stdin/stdout. The client core is adapted from the proven
-[`adk-mimir-memory`](https://github.com/Perseus-Computing-LLC/adk-mimir-memory)
+[`adk-perseus-vault-memory`](https://github.com/Perseus-Computing-LLC/adk-perseus-vault-memory)
 package.
 
 ## Development
