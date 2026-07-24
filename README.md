@@ -4,7 +4,7 @@
 
 **Long-term, local-first, encrypted memory for [CrewAI](https://crewai.com) agents — as explicit, agent-callable tools.**
 
-`crewai-perseus-vault` wraps [Perseus Vault](https://github.com/Perseus-Computing-LLC/perseus-vault) (formerly "Mimir"/"Mneme" — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption) as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
+`crewai-perseus-vault` wraps [Perseus Vault](https://github.com/Perseus-Computing-LLC/perseus-vault)  — an open-source, MIT-licensed persistent memory engine with 40+ MCP tools, FTS5 + dense hybrid search, and optional AES-256-GCM encryption as standard CrewAI `BaseTool`s. Your agents get two first-class actions they can deliberately call:
 
 - **`perseus_vault_remember`** — persist a fact, decision, insight, or note that survives across runs.
 - **`perseus_vault_recall`** — search what was stored earlier.
@@ -125,4 +125,4 @@ Unit tests mock the `perseus-vault` subprocess, so they run with no binary insta
 
 ## License
 
-MIT © 2026 Perseus Computing LLC. Perseus Vault (formerly Mimir/Mneme) is MIT-licensed by Perseus Computing LLC.
+MIT © 2026 Perseus Computing LLC. Perseus Vault is MIT-licensed by Perseus Computing LLC.
